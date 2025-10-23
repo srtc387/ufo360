@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+    <title>UFO Flap</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      body, html, #root {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        -webkit-touch-callout: none;
+        -webkit-user-select: none;
+        -khtml-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+        background-color: #000;
+        font-family: 'Helvetica Neue', Arial, sans-serif;
+      }
+
+      #canvas-container {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 1;
+      }
+      
+      .game-ui {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 2;
+        color: white;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        pointer-events: none;
+      }
+
+      .message-container {
+        background: rgba(0, 0, 0, 0.7);
+        padding: 2rem 3rem;
+        border-radius: 15px;
+        text-align: center;
+        pointer-events: auto;
+        box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
+      }
+
+      .message-container h1 {
+        font-size: 3rem;
+        margin-bottom: 0.5rem;
+        text-transform: uppercase;
+        letter-spacing: 3px;
+      }
+      
+      .message-container h2 {
+        font-size: 2rem;
+        margin-top: 0.5rem;
+        margin-bottom: 0.5rem;
+      }
+      
+      .message-container h3 {
+        font-size: 1.5rem;
+        margin-top: 0.5rem;
+        margin-bottom: 0.5rem;
+      }
+
+      .message-container p {
+        font-size: 1.2rem;
+        margin-top: 1rem;
+        color: #ddd;
+      }
+
+      .message-container button {
+        margin-top: 1.5rem;
+        padding: 0.8rem 2rem;
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: #000;
+        background: linear-gradient(145deg, #00FFFF, #00BFFF);
+        border: none;
+        border-radius: 50px;
+        cursor: pointer;
+        transition: all 0.2s ease-in-out;
+        box-shadow: 0 5px 15px rgba(0, 255, 255, 0.3);
+        pointer-events: auto;
+      }
+      
+      .message-container button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(0, 255, 255, 0.5);
+      }
+
+      .hud {
+        position: absolute;
+        width: 100%;
+        top: 0;
+        left: 0;
+        padding: 20px;
+        box-sizing: border-box;
+        display: flex;
+        justify-content: space-between;
+        font-size: 1.8rem;
+        font-weight: bold;
+        text-shadow: 3px 3px 6px #000000;
+        pointer-events: none;
+        line-height: 1.2;
+      }
+
+      .score {
+        text-align: left;
+      }
+
+      .level {
+        text-align: right;
+      }
+      
+      .pause-button {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        z-index: 3;
+        background: rgba(0, 0, 0, 0.5);
+        color: white;
+        border: 2px solid white;
+        border-radius: 50%;
+        width: 50px;
+        height: 50px;
+        font-size: 1.5rem;
+        font-weight: bold;
+        cursor: pointer;
+        pointer-events: auto;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        line-height: 1;
+        text-shadow: none;
+        transition: background 0.2s;
+      }
+
+      .pause-button:hover {
+        background: rgba(255, 255, 255, 0.2);
+      }
+
+      .arcade-button {
+        position: absolute;
+        bottom: 30px;
+        right: 30px;
+        z-index: 3;
+        width: 80px;
+        height: 80px;
+        background: radial-gradient(circle at 50% 40%, #ff4d4d, #d90000);
+        border-radius: 50%;
+        border: 4px solid #800000;
+        box-shadow: 
+          inset 0 4px 8px rgba(255, 255, 255, 0.4),
+          inset 0 -8px 8px rgba(0, 0, 0, 0.3),
+          0px 8px 0px #600000,
+          0px 12px 20px rgba(0, 0, 0, 0.5);
+        cursor: pointer;
+        pointer-events: auto;
+        transition: all 0.07s ease-in-out;
+        -webkit-tap-highlight-color: transparent; /* remove blue highlight on tap */
+      }
+      
+      .arcade-button:active {
+        transform: translateY(4px);
+        box-shadow: 
+          inset 0 4px 8px rgba(255, 255, 255, 0.4),
+          inset 0 -8px 8px rgba(0, 0, 0, 0.3),
+          0px 4px 0px #600000,
+          0px 8px 12px rgba(0, 0, 0, 0.5);
+      }
+
+      .arrow-indicator {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 4rem;
+        color: rgba(255, 255, 255, 0.7);
+        text-shadow: 0 0 15px #fff;
+        pointer-events: none;
+        animation: pulse 1.5s infinite ease-in-out;
+      }
+      .arrow-left { left: 20px; }
+      .arrow-right { right: 20px; }
+
+      @keyframes pulse {
+        0%, 100% { opacity: 0.5; }
+        50% { opacity: 1; }
+      }
+
+      .zoom-controls {
+        position: absolute;
+        bottom: 20px;
+        right: 20px;
+        z-index: 3;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        pointer-events: auto;
+      }
+      .zoom-button {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background: rgba(0, 0, 0, 0.5);
+        color: white;
+        border: 2px solid white;
+        font-size: 2rem;
+        line-height: 1;
+        font-weight: bold;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background 0.2s;
+      }
+      .zoom-button:hover {
+        background: rgba(255, 255, 255, 0.2);
+      }
+
+      .audio-controls-container {
+        margin-top: 2rem;
+        display: flex;
+        gap: 1.5rem;
+        justify-content: center;
+        align-items: center;
+      }
+      .audio-control-button {
+        position: relative;
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.1);
+        color: white;
+        border: 2px solid rgba(255, 255, 255, 0.5);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background 0.2s, opacity 0.2s;
+        pointer-events: auto;
+      }
+      .audio-control-button:hover {
+        background: rgba(255, 255, 255, 0.2);
+      }
+      .audio-slash {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 70%;
+        height: 2px;
+        background-color: white;
+        transform: translate(-50%, -50%) rotate(-45deg);
+        transform-origin: center;
+      }
+
+      .ingame-audio-controls {
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        z-index: 3;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+    </style>
+
+<link rel="stylesheet" href="/index.css">
+  <script type="importmap">
+{
+  "imports": {
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "@react-three/fiber": "https://aistudiocdn.com/@react-three/fiber@^9.4.0",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "three": "https://aistudiocdn.com/three@^0.180.0",
+    "@react-three/drei": "https://aistudiocdn.com/@react-three/drei@^10.7.6"
+  }
+}
+</script>
+  <script type="module" crossorigin src="./assets/index-BTwy8hvP.js"></script>
+</head>
+  <body>
+    <div id="root"></div>
+</body>
+</html>
