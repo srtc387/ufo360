@@ -1,0 +1,5 @@
+{
+  "name": "UFO-melodyfora-360v1",
+  "description": "A 3D flying game where you control a UFO. Start with 3 lives, dodge pipes, and collect star coins to earn more lives. Complete levels to progress and achieve a high score.",
+  "requestFramePermissions": []
+}
